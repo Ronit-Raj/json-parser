@@ -1,16 +1,14 @@
 package main 
 
 import "fmt"
-import "unicode/utf8"
-import "scanner"
+import "json-parser/scanner"
 
 func main() {
-	s := "a世界😅😅b 45"
-	i := 0 
-	fmt.Println(utf8.RuneCountInString(s))
-	for i<len(s){
-		char , size := utf8.DecodeRuneInString(s[i:])
-		fmt.Printf("%c",char)
-		i+=size
+	scanner.Text = "-3.67e2}"
+	token , err := scanner.NextToken()
+	for token.TypeOfToken != scanner.EOF {
+		fmt.Printf("string-val = %s num-val =%f type=%d \n",token.StringVal,token.NumVal,token.TypeOfToken)
+		fmt.Printf("error-message=%s error-code=%d \n",err.Msg,err.Code)
+		token , err = scanner.NextToken()
 	}
 }

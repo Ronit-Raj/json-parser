@@ -21,13 +21,13 @@ const VALUE_SEPARATOR _tokenType = 8
 const EOF _tokenType = 9
 
 type Token struct {
-	numVal      float64
-	stringVal   string
-	typeOfToken _tokenType
+	NumVal      float64
+	StringVal   string
+	TypeOfToken _tokenType
 }
 type Error struct {
-	msg  string
-	code int
+	Msg  string
+	Code int
 }
 
 var Text string
@@ -36,14 +36,14 @@ var pointer int
 func skipWhiteSpaces() {
 	currChar, size := utf8.DecodeRuneInString(Text[pointer:])
 	for currChar==' ' || currChar=='\n' || currChar=='\t'{
-		currChar,size = utf8.DecodeRuneInString(Text[pointer:])
 		pointer+=size
+		currChar,size = utf8.DecodeRuneInString(Text[pointer:])
 	}
 }
 
 func readNumber() (float64,Error) {
 	var int float64 = 0
-	var exp float64 = 1
+	var exp float64 = 0
 	var frac float64 = 0
 	var fracMultiplier float64 = 0.1
 	var base float64 = 0
@@ -52,9 +52,10 @@ func readNumber() (float64,Error) {
 	var fracBase bool = false
 	var state int8 = 0
 	var err Error
+	loop:
 	for pointer < len(Text) {
 		currentChar , charSize := utf8.DecodeRuneInString(Text[pointer:])
-		err.msg = fmt.Sprintf("Unexpected chracter %c",currentChar)
+		err.Msg = fmt.Sprintf("Unexpected chracter %c",currentChar)
 		switch state{
 		case 0:
 			if(currentChar=='0'){
@@ -74,7 +75,7 @@ func readNumber() (float64,Error) {
 				state = 3
 				fracBase = true
 			}else{
-				state = -1
+				break loop
 			}
 		case 2:
 			if(currentChar=='0'){
@@ -101,7 +102,7 @@ func readNumber() (float64,Error) {
 			}else if(currentChar=='e' || currentChar=='E'){
 				state = 6
 			}else{
-				state = -1
+				break loop
 			}
 		case 4:
 			if(unicode.IsDigit(currentChar)){
@@ -119,7 +120,7 @@ func readNumber() (float64,Error) {
 			}else if(currentChar=='e' || currentChar=='E'){
 				state = 6
 			}else {
-				state = -1
+				break loop
 			}
 		case 6:
 			if(unicode.IsDigit(currentChar)){
@@ -150,7 +151,7 @@ func readNumber() (float64,Error) {
 			}else if(currentChar=='.'){
 				state = 9
 			}else{
-				state = -1
+				break loop
 			}
 		}
 		if(state==-1){
@@ -159,11 +160,11 @@ func readNumber() (float64,Error) {
 		pointer+=charSize
 	}
 
-	if(state!=1 || state!=3 || state!=5 || state!=8){
-		err.code = -1
+	if(state!=1 && state!=3 && state!=5 && state!=8){
+		err.Code = -1
 	}else{
-		err.msg = ""
-		err.code = 0
+		err.Msg = ""
+		err.Code = 0
 	}
 
 	if(negBase){
@@ -175,16 +176,16 @@ func readNumber() (float64,Error) {
 	if(negExp){
 		exp = 0-exp
 	}
-	return math.Pow(base,exp) , err 
+	return base*math.Pow(10,exp) , err 
 }
 
 func readString() (string,Error){
 	var stringVal string
-	startMarker := pointer + 1
-	peekPointer := pointer + 1
+	startMarker := pointer 
+	peekPointer := pointer 
 	err := Error{"Error: expected \" ", -1}
 	for peekPointer < len(Text) { //advancing peek pointer to find matching double quotes
-		peekChar, pSize := utf8.DecodeLastRuneInString(Text[pointer:])
+		peekChar, pSize := utf8.DecodeRuneInString(Text[peekPointer:])
 		if peekChar == '"' && Text[peekPointer-1] != 0x5C {
 			/*
 				this is the end of a string because we have found a closing double quotes and
@@ -192,6 +193,8 @@ func readString() (string,Error){
 			*/
 			stringVal = Text[startMarker:peekPointer]
 			err = Error{"", 0}
+			peekPointer += pSize
+			break
 		}
 		peekPointer += pSize
 	}
@@ -220,16 +223,18 @@ func NextToken() (Token, Error) {
 			currToken = Token{math.NaN(), "", BEGIN_ARRAY}
 		case rune(']'):
 			pointer += size
-			currToken = Token{math.NaN(), "", END_OBJECT}
+			currToken = Token{math.NaN(), "", END_ARRAY}
 		case rune('}'):
 			pointer += size
-			currToken = Token{math.NaN(), "", END_ARRAY}
+			currToken = Token{math.NaN(), "", END_OBJECT}
 		case rune('"'):
 			var stringVal string
+			pointer += size
 			stringVal , err = readString()
 			currToken = Token{math.NaN(),stringVal,STRING}		
 		case ' ', '\t', '\n', '\r':
 			skipWhiteSpaces()
+			currToken,err = NextToken()
 		default:
 			if(unicode.IsNumber(currChar) || currChar=='-'){
 				var numVal float64
