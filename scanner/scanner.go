@@ -9,7 +9,6 @@ import (
 
 type _tokenType uint8
 
-const IDENTIFIER _tokenType = 0
 const STRING _tokenType = 1
 const NUMBER _tokenType = 2
 const BEGIN_ARRAY _tokenType = 3

@@ -28,11 +28,43 @@ func TestNextToken(t *testing.T) {
 			},
 		},
 		{
+			name: "Number negative fraction",
+			input: "-0.34",
+			expected: []Token{
+				{TypeOfToken: NUMBER,NumVal: -0.34},
+			},
+		},
+		{
+			name: "Number negative fraction 02",
+			input: "-2.34",
+			expected: []Token{
+				{TypeOfToken: NUMBER,NumVal: -2.34},
+			},
+		},
+		{
+			name: "Number negative exponent",
+			input: "-2e3",
+			expected: []Token{
+				{TypeOfToken: NUMBER,NumVal: -2000},
+			},
+		},
+		{
 			name:  "String Simple",
 			input: `"hello"`,
 			expected: []Token{
 				{StringVal: "hello", TypeOfToken: STRING},
 				{TypeOfToken: EOF},
+			},
+		},
+		{
+			name: "String UTF8",
+			input: `{"😅","😭"}`,
+			expected: []Token{
+				{TypeOfToken: BEGIN_OBJECT},
+				{TypeOfToken: STRING,StringVal: `😅`},
+				{TypeOfToken: VALUE_SEPARATOR},
+				{TypeOfToken: STRING,StringVal: `😭`},
+				{TypeOfToken: END_OBJECT},
 			},
 		},
 		{
@@ -54,6 +86,14 @@ func TestNextToken(t *testing.T) {
 			expected: []Token{
 				{NumVal: 123, TypeOfToken: NUMBER},
 				{TypeOfToken: EOF},
+			},
+		},
+		{
+			name: "Whitespaces02",
+			input: "\t\t[\n\n]",
+			expected: []Token{
+				{TypeOfToken: BEGIN_ARRAY},
+				{TypeOfToken: END_ARRAY},
 			},
 		},
 		{
@@ -84,6 +124,33 @@ func TestNextToken(t *testing.T) {
 				{TypeOfToken: BEGIN_ARRAY},
 				{TypeOfToken: END_ARRAY},
 			},
+		},
+		{
+			name: "CustomTest02",
+			input: "{@@@}",
+			wantErr: true,
+		},
+		{
+			name: "CustomTest03",
+			input: "{😅😅}",
+			wantErr: true,
+		},
+		{
+			name: "CustomTest04",
+			input: `"{}"`,
+			expected: []Token{
+				{TypeOfToken: STRING,StringVal: `{}`},
+			},
+		},
+		{
+			name: "CustomTest05",
+			input: `"""`,
+			wantErr: true,
+		},
+		{
+			name: "CustomTest06",
+			input: `12.{}`,
+			wantErr: true,
 		},
 	}
 
