@@ -49,6 +49,13 @@ func TestNextToken(t *testing.T) {
 			},
 		},
 		{
+			name: "Number zero raise to exponent",
+			input: "0e12",
+			expected: []Token{
+				{TypeOfToken: NUMBER,NumVal: 0},
+			},
+		},
+		{
 			name:  "String Simple",
 			input: `"hello"`,
 			expected: []Token{
@@ -197,6 +204,11 @@ func TestNextToken(t *testing.T) {
 						t.Errorf("step %d: expected string %q, got %q", i, want.StringVal, got.StringVal)
 					}
 				}
+			}
+
+			next,_ := NextToken()
+			if(tt.wantErr==false && next.TypeOfToken!=EOF){
+				t.Errorf("More tokens than expected,Unexpected token\n %+v",next)
 			}
 		})
 	}

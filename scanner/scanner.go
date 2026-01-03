@@ -64,6 +64,8 @@ func readNumber() (float64,Error) {
 		case 1:
 			if(currentChar=='.'){
 				state = 3
+			}else if(currentChar=='e' || currentChar=='E'){
+				state = 6
 			}else{
 				break loop
 			}
