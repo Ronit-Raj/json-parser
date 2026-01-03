@@ -152,6 +152,16 @@ func TestNextToken(t *testing.T) {
 			input: `12.{}`,
 			wantErr: true,
 		},
+		{
+			name: "invalid numbers",
+			input: `12.`,
+			wantErr: true,
+		},
+		{
+			name: "invalid numbers 02",
+			input: `001`,
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {

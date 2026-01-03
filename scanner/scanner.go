@@ -5,6 +5,7 @@ import (
 	"unicode/utf8"
 	"fmt"
 	"math"
+	"strconv"
 )
 
 type _tokenType uint8
@@ -40,16 +41,10 @@ func skipWhiteSpaces() {
 	}
 }
 
+// check https://github.com/Ronit-Raj/json-parser/blob/main/README.md for automata
 func readNumber() (float64,Error) {
-	var int float64 = 0
-	var exp float64 = 0
-	var frac float64 = 0
-	var fracMultiplier float64 = 0.1
-	var base float64 = 0
-	var negBase bool = false
-	var negExp bool = false
-	var fracBase bool = false
 	var state int8 = 0
+	var start int = pointer
 	var err Error
 	loop:
 	for pointer < len(Text) {
@@ -61,10 +56,7 @@ func readNumber() (float64,Error) {
 				state = 1
 			}else if('1'<=currentChar && currentChar<='9'){
 				state = 3
-				int*=10
-				int+=float64(currentChar-'0')
 			}else if(currentChar=='-'){
-				negBase = true
 				state = 2
 			}else{
 				state = -1
@@ -72,7 +64,6 @@ func readNumber() (float64,Error) {
 		case 1:
 			if(currentChar=='.'){
 				state = 3
-				fracBase = true
 			}else{
 				break loop
 			}
@@ -81,23 +72,16 @@ func readNumber() (float64,Error) {
 				state = 1
 			}else if('1' <= currentChar && currentChar <='9'){
 				state = 3
-				int*=10
-				int+=float64(currentChar-'0')
 			}else{
 				state = -1
 			}
 		case 3:
-			if(unicode.IsDigit(currentChar) && !fracBase){
+			if(unicode.IsDigit(currentChar)){
 				state = 3
-				int*=10
-				int+=float64(currentChar-'0')
-			}else if(unicode.IsDigit(currentChar) && fracBase){
+			}else if(unicode.IsDigit(currentChar)){
 				state = 3
-				frac = frac + (fracMultiplier*(float64(currentChar-'0')))
-				fracMultiplier/=10
 			}else if(currentChar=='.'){
 				state = 4
-				fracBase = true
 			}else if(currentChar=='e' || currentChar=='E'){
 				state = 6
 			}else{
@@ -106,16 +90,12 @@ func readNumber() (float64,Error) {
 		case 4:
 			if(unicode.IsDigit(currentChar)){
 				state = 5
-				frac = frac + (fracMultiplier*(float64(currentChar-'0')))
-				fracMultiplier/=10
 			}else{
 				state = -1
 			}
 		case 5:
 			if(unicode.IsDigit(currentChar)){
 				state = 5
-				frac = frac + (fracMultiplier*(float64(currentChar-'0')))
-				fracMultiplier/=10
 			}else if(currentChar=='e' || currentChar=='E'){
 				state = 6
 			}else {
@@ -124,10 +104,7 @@ func readNumber() (float64,Error) {
 		case 6:
 			if(unicode.IsDigit(currentChar)){
 				state = 8
-				exp*=10
-				exp+=(float64(currentChar-'0'))
 			}else if(currentChar=='-'){
-				negExp = true
 				state = 7
 			}else if(currentChar=='+'){
 				state = 7
@@ -137,16 +114,12 @@ func readNumber() (float64,Error) {
 		case 7:
 			if(unicode.IsDigit(currentChar)){
 				state = 8
-				exp*=10
-				exp+=(float64(currentChar-'0'))
 			}else{
 				state = -1
 			}
 		case 8:
 			if(unicode.IsDigit(currentChar)){
 				state = 8
-				exp*=10
-				exp+=(float64(currentChar-'0'))
 			}else if(currentChar=='.'){
 				state = 9
 			}else{
@@ -161,21 +134,13 @@ func readNumber() (float64,Error) {
 
 	if(state!=1 && state!=3 && state!=5 && state!=8){
 		err.Code = -1
+		return math.NaN(),err
 	}else{
 		err.Msg = ""
 		err.Code = 0
+		num,_ := strconv.ParseFloat(Text[start:pointer],64)
+		return num , err
 	}
-
-	if(negBase){
-		base = -(int+frac)
-	}else{
-		base = int+frac
-	}
-
-	if(negExp){
-		exp = 0-exp
-	}
-	return base*math.Pow(10,exp) , err 
 }
 
 func readString() (string,Error){
