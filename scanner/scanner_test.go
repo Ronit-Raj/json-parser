@@ -219,7 +219,7 @@ func TestNextToken(t *testing.T) {
 			pointer = 0
 
 			var allTokens []Token
-			var lastErr Error
+			var lastErr error
 
 			// Collect all tokens
 			for {
@@ -227,7 +227,7 @@ func TestNextToken(t *testing.T) {
 				allTokens = append(allTokens, got)
 				lastErr = err
 
-				if err.Code != 0 {
+				if err != nil {
 					break
 				}
 				if got.TypeOfToken == EOF {
@@ -237,14 +237,14 @@ func TestNextToken(t *testing.T) {
 
 			// Check if error expectation matches
 			if tt.wantErr {
-				if lastErr.Code == 0 {
+				if lastErr == nil {
 					t.Errorf("expected error but got none")
 				}
 				return
 			}
 
-			if lastErr.Code != 0 {
-				t.Errorf("unexpected error: %v, msg: %s", lastErr, lastErr.Msg)
+			if lastErr != nil {
+				t.Errorf("unexpected error: %v", lastErr)
 				return
 			}
 

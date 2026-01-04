@@ -28,9 +28,13 @@ type Token struct {
 	StringVal   string
 	TypeOfToken _tokenType
 }
-type Error struct {
+type SyntaxError struct {
 	Msg  string
-	Code int
+	Position int
+}
+
+func (e SyntaxError) Error() string {
+	return fmt.Sprintf("Error:%d %s",e.Position,e.Msg)
 }
 
 var Text string
@@ -45,10 +49,10 @@ func skipWhiteSpaces() {
 }
 
 // check https://github.com/Ronit-Raj/json-parser/blob/main/README.md for automata
-func readNumber() (float64,Error) {
+func readNumber() (float64,error) {
 	var state int8 = 0
 	var start int = pointer
-	var err Error
+	var err SyntaxError
 	loop:
 	for pointer < len(Text) {
 		currentChar , charSize := utf8.DecodeRuneInString(Text[pointer:])
@@ -138,21 +142,18 @@ func readNumber() (float64,Error) {
 	}
 
 	if(state!=1 && state!=3 && state!=5 && state!=8){
-		err.Code = -1
+		err.Position = pointer
 		return math.NaN(),err
 	}else{
-		err.Msg = ""
-		err.Code = 0
 		num,_ := strconv.ParseFloat(Text[start:pointer],64)
-		return num , err
+		return num , nil
 	}
 }
 
-func readString() (string,Error){
+func readString() (string,error){
 	var stringVal string
 	startMarker := pointer 
 	peekPointer := pointer 
-	err := Error{"Error: expected \" ", -1}
 	for peekPointer < len(Text) { //advancing peek pointer to find matching double quotes
 		peekChar, pSize := utf8.DecodeRuneInString(Text[peekPointer:])
 		if peekChar == '"' && Text[peekPointer-1] != 0x5C {
@@ -161,14 +162,17 @@ func readString() (string,Error){
 				no escape character
 			*/
 			stringVal = Text[startMarker:peekPointer]
-			err = Error{"", 0}
 			peekPointer += pSize
-			break
+			pointer = peekPointer
+			return stringVal , nil
 		}
 		peekPointer += pSize
 	}
 	pointer = peekPointer
-	return stringVal,err
+	return "",SyntaxError{
+		Msg: "unterminated string",
+		Position: startMarker,
+	}
 }
 
 func match(lex string) (bool){
@@ -181,9 +185,9 @@ func match(lex string) (bool){
 	return true
 }
 
-func NextToken() (Token, Error) {
+func NextToken() (Token, error) {
 	var currToken Token
-	var err Error
+	var err error
 	if pointer < len(Text) {
 		currChar, size := utf8.DecodeRuneInString(Text[pointer:])
 
@@ -216,21 +220,21 @@ func NextToken() (Token, Error) {
 				currToken = Token{math.NaN(),"",LITERAL_FALSE}
 			}else {
 				errorMsg := fmt.Sprintf("Invalid Chracter:%c",currChar)
-				err = Error{errorMsg,-1}
+				err = SyntaxError{errorMsg,pointer}
 			}
 		case rune('t'):
 			if (match("true")){
 				currToken = Token{math.NaN(),"",LITERAL_TRUE}
 			}else{
 				errorMsg := fmt.Sprintf("Invalid Chracter:%c",currChar)
-				err = Error{errorMsg,-1}
+				err = SyntaxError{errorMsg,pointer}
 			}
 		case rune('n'):
 			if (match("null")){
 				currToken = Token{math.NaN(),"",LITERAL_NULL}
 			}else{
 				errorMsg := fmt.Sprintf("Invalid Chracter:%c",currChar)
-				err = Error{errorMsg,-1}
+				err = SyntaxError{errorMsg,pointer}
 			}
 		case ' ', '\t', '\n', '\r':
 			skipWhiteSpaces()
@@ -242,10 +246,10 @@ func NextToken() (Token, Error) {
 				currToken = Token{numVal,"",NUMBER}
 			}else{
 				errorMsg := fmt.Sprintf("Invalid Chracter:%c",currChar)
-				err = Error{errorMsg,-1}
+				err = SyntaxError{errorMsg,pointer}
 			}
 		}
 		return currToken, err
 	}
-	return Token{0.0, "", EOF}, Error{"", 0}
+	return Token{0.0, "", EOF}, nil
 }
