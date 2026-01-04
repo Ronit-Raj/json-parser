@@ -18,7 +18,10 @@ const END_ARRAY _tokenType = 5
 const END_OBJECT _tokenType = 6
 const NAME_SEPARATOR _tokenType = 7
 const VALUE_SEPARATOR _tokenType = 8
-const EOF _tokenType = 9
+const LITERAL_FALSE _tokenType = 9
+const LITERAL_TRUE _tokenType = 10
+const LITERAL_NULL _tokenType = 11
+const EOF _tokenType = 12
 
 type Token struct {
 	NumVal      float64
@@ -168,6 +171,16 @@ func readString() (string,Error){
 	return stringVal,err
 }
 
+func match(lex string) (bool){
+	for _,val := range lex {
+		if rune(Text[pointer]) != val {
+			return false
+		}
+		pointer++
+	}
+	return true
+}
+
 func NextToken() (Token, Error) {
 	var currToken Token
 	var err Error
@@ -197,7 +210,28 @@ func NextToken() (Token, Error) {
 			var stringVal string
 			pointer += size
 			stringVal , err = readString()
-			currToken = Token{math.NaN(),stringVal,STRING}		
+			currToken = Token{math.NaN(),stringVal,STRING}
+		case rune('f'):
+			if (match("false")){
+				currToken = Token{math.NaN(),"",LITERAL_FALSE}
+			}else {
+				errorMsg := fmt.Sprintf("Invalid Chracter:%c",currChar)
+				err = Error{errorMsg,-1}
+			}
+		case rune('t'):
+			if (match("true")){
+				currToken = Token{math.NaN(),"",LITERAL_TRUE}
+			}else{
+				errorMsg := fmt.Sprintf("Invalid Chracter:%c",currChar)
+				err = Error{errorMsg,-1}
+			}
+		case rune('n'):
+			if (match("null")){
+				currToken = Token{math.NaN(),"",LITERAL_NULL}
+			}else{
+				errorMsg := fmt.Sprintf("Invalid Chracter:%c",currChar)
+				err = Error{errorMsg,-1}
+			}
 		case ' ', '\t', '\n', '\r':
 			skipWhiteSpaces()
 			currToken,err = NextToken()

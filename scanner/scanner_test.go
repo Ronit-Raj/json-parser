@@ -169,6 +169,32 @@ func TestNextToken(t *testing.T) {
 			input: `001`,
 			wantErr: true,
 		},
+		{
+			name: "literal 01",
+			input: `true`,
+			expected: []Token{
+				{TypeOfToken: LITERAL_TRUE},
+			},
+		},
+		{
+			name: "literal 02",
+			input: `false`,
+			expected: []Token{
+				{TypeOfToken: LITERAL_FALSE},
+			},
+		},
+		{
+			name: "literal 03",
+			input: `null`,
+			expected: []Token{
+				{TypeOfToken: LITERAL_NULL},
+			},
+		},
+		{
+			name: "invalid literal",
+			input: `nulls`,
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
