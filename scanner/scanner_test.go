@@ -28,31 +28,35 @@ func TestNextToken(t *testing.T) {
 			},
 		},
 		{
-			name: "Number negative fraction",
+			name:  "Number negative fraction",
 			input: "-0.34",
 			expected: []Token{
-				{TypeOfToken: NUMBER,NumVal: -0.34},
+				{TypeOfToken: NUMBER, NumVal: -0.34},
+				{TypeOfToken: EOF},
 			},
 		},
 		{
-			name: "Number negative fraction 02",
+			name:  "Number negative fraction 02",
 			input: "-2.34",
 			expected: []Token{
-				{TypeOfToken: NUMBER,NumVal: -2.34},
+				{TypeOfToken: NUMBER, NumVal: -2.34},
+				{TypeOfToken: EOF},
 			},
 		},
 		{
-			name: "Number negative exponent",
+			name:  "Number negative exponent",
 			input: "-2e3",
 			expected: []Token{
-				{TypeOfToken: NUMBER,NumVal: -2000},
+				{TypeOfToken: NUMBER, NumVal: -2000},
+				{TypeOfToken: EOF},
 			},
 		},
 		{
-			name: "Number zero raise to exponent",
+			name:  "Number zero raise to exponent",
 			input: "0e12",
 			expected: []Token{
-				{TypeOfToken: NUMBER,NumVal: 0},
+				{TypeOfToken: NUMBER, NumVal: 0},
+				{TypeOfToken: EOF},
 			},
 		},
 		{
@@ -64,14 +68,15 @@ func TestNextToken(t *testing.T) {
 			},
 		},
 		{
-			name: "String UTF8",
+			name:  "String UTF8",
 			input: `{"😅","😭"}`,
 			expected: []Token{
 				{TypeOfToken: BEGIN_OBJECT},
-				{TypeOfToken: STRING,StringVal: `😅`},
+				{TypeOfToken: STRING, StringVal: `😅`},
 				{TypeOfToken: VALUE_SEPARATOR},
-				{TypeOfToken: STRING,StringVal: `😭`},
+				{TypeOfToken: STRING, StringVal: `😭`},
 				{TypeOfToken: END_OBJECT},
+				{TypeOfToken: EOF},
 			},
 		},
 		{
@@ -96,11 +101,12 @@ func TestNextToken(t *testing.T) {
 			},
 		},
 		{
-			name: "Whitespaces02",
+			name:  "Whitespaces02",
 			input: "\t\t[\n\n]",
 			expected: []Token{
 				{TypeOfToken: BEGIN_ARRAY},
 				{TypeOfToken: END_ARRAY},
+				{TypeOfToken: EOF},
 			},
 		},
 		{
@@ -124,75 +130,85 @@ func TestNextToken(t *testing.T) {
 			},
 		},
 		{
-			name: "CustomTest01",
+			name:  "CustomTest01",
 			input: `-12.3e1[]`,
 			expected: []Token{
-				{TypeOfToken: NUMBER,NumVal: -123},
+				{TypeOfToken: NUMBER, NumVal: -123},
 				{TypeOfToken: BEGIN_ARRAY},
 				{TypeOfToken: END_ARRAY},
+				{TypeOfToken: EOF},
 			},
 		},
 		{
-			name: "CustomTest02",
-			input: "{@@@}",
+			name:    "CustomTest02",
+			input:   "{@@@}",
 			wantErr: true,
 		},
 		{
-			name: "CustomTest03",
-			input: "{😅😅}",
+			name:    "CustomTest03",
+			input:   "{😅😅}",
 			wantErr: true,
 		},
 		{
-			name: "CustomTest04",
+			name:  "CustomTest04",
 			input: `"{}"`,
 			expected: []Token{
-				{TypeOfToken: STRING,StringVal: `{}`},
+				{TypeOfToken: STRING, StringVal: `{}`},
+				{TypeOfToken: EOF},
 			},
 		},
 		{
-			name: "CustomTest05",
-			input: `"""`,
+			name:    "CustomTest05",
+			input:   `"""`,
 			wantErr: true,
 		},
 		{
-			name: "CustomTest06",
-			input: `12.{}`,
+			name:    "CustomTest06",
+			input:   `12.{}`,
 			wantErr: true,
 		},
 		{
-			name: "invalid numbers",
-			input: `12.`,
+			name:    "invalid numbers",
+			input:   `12.`,
 			wantErr: true,
 		},
 		{
-			name: "invalid numbers 02",
-			input: `001`,
-			wantErr: true,
+			name:    "invalid numbers 02",
+			input:   `001`,
+			expected: []Token{
+				{TypeOfToken: NUMBER,NumVal: 0},
+				{TypeOfToken: NUMBER,NumVal: 0},
+				{TypeOfToken: NUMBER,NumVal: 1},
+				{TypeOfToken: EOF},
+			},
 		},
 		{
-			name: "literal 01",
+			name:  "literal 01",
 			input: `true`,
 			expected: []Token{
 				{TypeOfToken: LITERAL_TRUE},
+				{TypeOfToken: EOF},
 			},
 		},
 		{
-			name: "literal 02",
+			name:  "literal 02",
 			input: `false`,
 			expected: []Token{
 				{TypeOfToken: LITERAL_FALSE},
+				{TypeOfToken: EOF},
 			},
 		},
 		{
-			name: "literal 03",
+			name:  "literal 03",
 			input: `null`,
 			expected: []Token{
 				{TypeOfToken: LITERAL_NULL},
+				{TypeOfToken: EOF},
 			},
 		},
 		{
-			name: "invalid literal",
-			input: `nulls`,
+			name:    "invalid literal",
+			input:   `nulls`,
 			wantErr: true,
 		},
 	}
@@ -201,40 +217,64 @@ func TestNextToken(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			Text = tt.input
 			pointer = 0
-			
-			for i, want := range tt.expected {
-				got, err := NextToken()
-				if tt.wantErr {
-					if err.Code == 0 {
-						t.Errorf("step %d: expected error but got none", i)
-					}
-					return 
-				} else if err.Code != 0 {
-					t.Errorf("step %d: unexpected error: %v, msg: %s", i, err, err.Msg)
-					return
-				}
 
-				if got.TypeOfToken != want.TypeOfToken {
-					t.Errorf("step %d: expected token type %v, got %v", i, want.TypeOfToken, got.TypeOfToken)
+			var allTokens []Token
+			var lastErr Error
+
+			// Collect all tokens
+			for {
+				got, err := NextToken()
+				allTokens = append(allTokens, got)
+				lastErr = err
+
+				if err.Code != 0 {
+					break
 				}
-				
-				if want.TypeOfToken == NUMBER {
-					// Compare with epsilon if necessary, but for simple cases exact check might suffice
-					if got.NumVal != want.NumVal {
-						t.Errorf("step %d: expected number %v, got %v", i, want.NumVal, got.NumVal)
-					}
-				}
-				
-				if want.TypeOfToken == STRING {
-					if got.StringVal != want.StringVal {
-						t.Errorf("step %d: expected string %q, got %q", i, want.StringVal, got.StringVal)
-					}
+				if got.TypeOfToken == EOF {
+					break
 				}
 			}
 
-			next,_ := NextToken()
-			if(tt.wantErr==false && next.TypeOfToken!=EOF){
-				t.Errorf("More tokens than expected,Unexpected token\n %+v",next)
+			// Check if error expectation matches
+			if tt.wantErr {
+				if lastErr.Code == 0 {
+					t.Errorf("expected error but got none")
+				}
+				return
+			}
+
+			if lastErr.Code != 0 {
+				t.Errorf("unexpected error: %v, msg: %s", lastErr, lastErr.Msg)
+				return
+			}
+
+			// Check exact token count
+			if len(allTokens) != len(tt.expected) {
+				t.Errorf("expected %d tokens, got %d tokens", len(tt.expected), len(allTokens))
+				t.Errorf("Expected tokens: %+v", tt.expected)
+				t.Errorf("Got tokens: %+v", allTokens)
+				return
+			}
+
+			// Verify each token
+			for i, want := range tt.expected {
+				got := allTokens[i]
+
+				if got.TypeOfToken != want.TypeOfToken {
+					t.Errorf("token %d: expected token type %v, got %v", i, want.TypeOfToken, got.TypeOfToken)
+				}
+
+				if want.TypeOfToken == NUMBER {
+					if got.NumVal != want.NumVal {
+						t.Errorf("token %d: expected number %v, got %v", i, want.NumVal, got.NumVal)
+					}
+				}
+
+				if want.TypeOfToken == STRING {
+					if got.StringVal != want.StringVal {
+						t.Errorf("token %d: expected string %q, got %q", i, want.StringVal, got.StringVal)
+					}
+				}
 			}
 		})
 	}
