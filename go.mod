@@ -1,3 +1,3 @@
-module json-parser
+module json_parser
 
 go 1.25.4
