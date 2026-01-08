@@ -8,25 +8,25 @@ import (
 	"strconv"
 )
 
-type _tokenType uint8
+type TokenType uint8
 
-const STRING _tokenType = 1
-const NUMBER _tokenType = 2
-const BEGIN_ARRAY _tokenType = 3
-const BEGIN_OBJECT _tokenType = 4
-const END_ARRAY _tokenType = 5
-const END_OBJECT _tokenType = 6
-const NAME_SEPARATOR _tokenType = 7
-const VALUE_SEPARATOR _tokenType = 8
-const LITERAL_FALSE _tokenType = 9
-const LITERAL_TRUE _tokenType = 10
-const LITERAL_NULL _tokenType = 11
-const EOF _tokenType = 12
+const STRING TokenType = 1
+const NUMBER TokenType = 2
+const BEGIN_ARRAY TokenType = 3
+const BEGIN_OBJECT TokenType = 4
+const END_ARRAY TokenType = 5
+const END_OBJECT TokenType = 6
+const NAME_SEPARATOR TokenType = 7
+const VALUE_SEPARATOR TokenType = 8
+const LITERAL_FALSE TokenType = 9
+const LITERAL_TRUE TokenType = 10
+const LITERAL_NULL TokenType = 11
+const EOF TokenType = 12
 
 type Token struct {
 	NumVal      float64
 	StringVal   string
-	TypeOfToken _tokenType
+	TypeOfToken TokenType
 }
 type SyntaxError struct {
 	Msg  string
