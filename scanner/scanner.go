@@ -185,6 +185,17 @@ func match(lex string) (bool){
 	return true
 }
 
+func PeekToken() (Token,error){
+	peekPointer := pointer
+	peekToken,err := NextToken()
+	if(err!=nil){
+		pointer = peekPointer
+		return Token{0.0, "", EOF},err
+	}
+	pointer = peekPointer
+	return peekToken,nil
+}
+
 func NextToken() (Token, error) {
 	var currToken Token
 	var err error

@@ -1,14 +1,23 @@
-package main 
+package main
 
-import "fmt"
-import "json-parser/scanner"
+import (
+	"fmt"
+	"json_parser/parser"
+)
 
 func main() {
-	scanner.Text = "-3.67e2}"
-	token , err := scanner.NextToken()
-	for token.TypeOfToken != scanner.EOF {
-		fmt.Printf("string-val = %s num-val =%f type=%d \n",token.StringVal,token.NumVal,token.TypeOfToken)
-		fmt.Printf("error-message=%s error-code=%d \n",err.Msg,err.Code)
-		token , err = scanner.NextToken()
+	json := `{"class":12,"sec":"A","Name":"ronit",
+			   "marks":{"phy":90,"chem":85,"maths":90},
+			   "co-cirrcular":{},
+			   "address":null,
+			   "array":["hello","world"]}`
+	// json := `{}}}`
+	var i map[string]any
+	if err:=parser.Decode(json,&i); err != nil {
+		fmt.Println(err)
+		return
 	}
+	fmt.Println(i["Name"].(string))
+	
 }
+			
