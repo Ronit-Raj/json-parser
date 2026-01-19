@@ -40,6 +40,10 @@ func (e SyntaxError) Error() string {
 var Text string
 var pointer int
 
+func ResetPointer() {
+	pointer = 0
+}
+
 func skipWhiteSpaces() {
 	currChar, size := utf8.DecodeRuneInString(Text[pointer:])
 	for currChar==' ' || currChar=='\n' || currChar=='\t'{
