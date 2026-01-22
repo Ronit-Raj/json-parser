@@ -1,11 +1,11 @@
 package parser
 
 import (
-	"github.com/Ronit-Raj/json-parser/scanner"
 	"reflect"
 	"testing"
-)
 
+	"github.com/Ronit-Raj/json-parser/scanner"
+)
 
 // Helper function to reset scanner state before each test
 func resetScanner() {
@@ -171,7 +171,7 @@ func TestDecodeBoolAndNull(t *testing.T) {
 			t.Errorf("Decode() = %v, want nil", result)
 		}
 	})
-	
+
 }
 
 func TestDecodeArray(t *testing.T) {
@@ -180,14 +180,14 @@ func TestDecodeArray(t *testing.T) {
 		input    string
 		expected []any
 		wantErr  bool
-	}{		
+	}{
 		{
 			name:     "Empty array",
 			input:    `[]`,
 			expected: []any{},
 			wantErr:  false,
 		},
-		
+
 		{
 			name:     "Array of numbers",
 			input:    `[1, 2, 3, 4, 5]`,
@@ -199,14 +199,14 @@ func TestDecodeArray(t *testing.T) {
 			input:    `["hello", "world"]`,
 			expected: []any{"hello", "world"},
 			wantErr:  false,
-		},		
+		},
 		{
 			name:     "Mixed array",
 			input:    `[1, "test", true, null, false]`,
 			expected: []any{float64(1), "test", true, nil, false},
 			wantErr:  false,
 		},
-		
+
 		{
 			name:     "Nested array",
 			input:    `[1, [2, 3], 4]`,
@@ -258,7 +258,7 @@ func TestDecodeObject(t *testing.T) {
 				"age":  float64(30),
 			},
 			wantErr: false,
-		},		
+		},
 		{
 			name:  "Object with different types",
 			input: `{"string": "value", "number": 42, "bool": true, "null": null}`,
@@ -270,7 +270,7 @@ func TestDecodeObject(t *testing.T) {
 			},
 			wantErr: false,
 		},
-	
+
 		{
 			name:  "Nested object",
 			input: `{"person": {"name": "Alice", "age": 25}}`,
@@ -325,10 +325,10 @@ func TestDecodeComplexStructures(t *testing.T) {
 		expected map[string]any
 		wantErr  bool
 	}{
-		
-			{
-				name: "Complex nested structure",
-				input: `{
+
+		{
+			name: "Complex nested structure",
+			input: `{
 					"class": 12,
 					"sec": "A",
 					"Name": "ronit🗿",
@@ -337,36 +337,36 @@ func TestDecodeComplexStructures(t *testing.T) {
 					"address": null,
 					"array": ["hello", "world"]
 				}`,
-				expected: map[string]any{
-					"class": float64(12),
-					"sec":   "A",
-					"Name":  "ronit🗿",
-					"marks": map[string]any{
-						"phy":   float64(90),
-						"chem":  float64(85),
-						"maths": float64(90),
-					},
-					"co-cirrcular": map[string]any{},
-					"address":      nil,
-					"array":        []any{"hello", "world"},
+			expected: map[string]any{
+				"class": float64(12),
+				"sec":   "A",
+				"Name":  "ronit🗿",
+				"marks": map[string]any{
+					"phy":   float64(90),
+					"chem":  float64(85),
+					"maths": float64(90),
 				},
-				wantErr: false,
+				"co-cirrcular": map[string]any{},
+				"address":      nil,
+				"array":        []any{"hello", "world"},
 			},
-		
-			{
-				name:  "Array of objects",
-				input: `{"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]}`,
-				expected: map[string]any{
-					"users": []any{
-						map[string]any{"name": "Alice", "age": float64(30)},
-						map[string]any{"name": "Bob", "age": float64(25)},
-					},
+			wantErr: false,
+		},
+
+		{
+			name:  "Array of objects",
+			input: `{"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]}`,
+			expected: map[string]any{
+				"users": []any{
+					map[string]any{"name": "Alice", "age": float64(30)},
+					map[string]any{"name": "Bob", "age": float64(25)},
 				},
-				wantErr: false,
 			},
-			{
-				name: "Deep nesting",
-				input: `{
+			wantErr: false,
+		},
+		{
+			name: "Deep nesting",
+			input: `{
 					"level1": {
 						"level2": {
 							"level3": {
@@ -375,18 +375,17 @@ func TestDecodeComplexStructures(t *testing.T) {
 						}
 					}
 				}`,
-				expected: map[string]any{
-					"level1": map[string]any{
-						"level2": map[string]any{
-							"level3": map[string]any{
-								"value": "deep",
-							},
+			expected: map[string]any{
+				"level1": map[string]any{
+					"level2": map[string]any{
+						"level3": map[string]any{
+							"value": "deep",
 						},
 					},
 				},
-				wantErr: false,
 			},
-		
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -428,6 +427,54 @@ func TestDecodeErrors(t *testing.T) {
 			name:    "Type mismatch - object to array",
 			input:   `{"key": "value"}`,
 			target:  new([]any),
+			wantErr: true,
+		},
+		{
+			name:    "Missing closing brace",
+			input:   `{"key": "value"`,
+			target:  new(map[string]any),
+			wantErr: true,
+		},
+		{
+			name:    "Missing closing bracket",
+			input:   `[1, 2, 3`,
+			target:  new([]any),
+			wantErr: true,
+		},
+		{
+			name:    "Missing comma between object properties",
+			input:   `{"key1": "value1" "key2": "value2"}`,
+			target:  new(map[string]any),
+			wantErr: true,
+		},
+		{
+			name:    "Missing comma between array elements",
+			input:   `[1 2 3]`,
+			target:  new([]any),
+			wantErr: true,
+		},
+		{
+			name:    "Missing colon in object",
+			input:   `{"key" "value"}`,
+			target:  new(map[string]any),
+			wantErr: true,
+		},
+		{
+			name:    "Trailing comma in object",
+			input:   `{"key": "value",}`,
+			target:  new(map[string]any),
+			wantErr: true,
+		},
+		{
+			name:    "Trailing comma in array",
+			input:   `[1, 2, 3,]`,
+			target:  new([]any),
+			wantErr: true,
+		},
+		{
+			name:    "Unclosed string",
+			input:   `{"key": "value}`,
+			target:  new(map[string]any),
 			wantErr: true,
 		},
 	}
@@ -507,7 +554,7 @@ func TestDecodeEmptyStructures(t *testing.T) {
 			t.Errorf("Expected empty map, got %v", result)
 		}
 	})
-	
+
 	t.Run("Empty array", func(t *testing.T) {
 		resetScanner()
 		var result []any
@@ -520,9 +567,7 @@ func TestDecodeEmptyStructures(t *testing.T) {
 			t.Errorf("Expected empty array, got %v", result)
 		}
 	})
-	
 
-	
 	t.Run("Object with empty nested structures", func(t *testing.T) {
 		resetScanner()
 		var result map[string]any
@@ -539,7 +584,7 @@ func TestDecodeEmptyStructures(t *testing.T) {
 			t.Errorf("Decode() = %v, want %v", result, expected)
 		}
 	})
-	
+
 }
 
 // Benchmark tests
@@ -551,7 +596,6 @@ func BenchmarkDecodeSimpleObject(b *testing.B) {
 		_ = Decode(json, &result)
 	}
 }
-
 
 func BenchmarkDecodeComplexObject(b *testing.B) {
 	json := `{
@@ -569,7 +613,6 @@ func BenchmarkDecodeComplexObject(b *testing.B) {
 		_ = Decode(json, &result)
 	}
 }
-
 
 func BenchmarkDecodeArray(b *testing.B) {
 	json := `[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]`

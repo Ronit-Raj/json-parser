@@ -7,38 +7,38 @@ import (
 )
 
 func Decode(text string, v any) error {
-    scanner.Text = text
-    scanner.ResetPointer()
-    
-    rv := reflect.ValueOf(v)
-    if rv.Kind() != reflect.Ptr || rv.IsNil() {
-        return fmt.Errorf("non-nil pointer required")
-    }
-    
-    err,val := value()
-	if(err!=nil){
+	scanner.Text = text
+	scanner.ResetPointer()
+
+	rv := reflect.ValueOf(v)
+	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+		return fmt.Errorf("non-nil pointer required")
+	}
+
+	err, val := value()
+	if err != nil {
 		return err
 	}
-    
-    // FIX: Handle nil values - only valid for pointers and interfaces
-    if val == nil {
-        targetKind := rv.Elem().Kind()
-        if targetKind == reflect.Ptr || targetKind == reflect.Interface {
-            rv.Elem().Set(reflect.Zero(rv.Elem().Type()))
-            return nil
-        }
-        return fmt.Errorf("cannot assign null to non-pointer/interface type %v", rv.Elem().Type())
-    }
-    
-    valType := reflect.ValueOf(val).Type()
-    targetType := rv.Elem().Type()
-    
-    if !valType.AssignableTo(targetType) {
-        return fmt.Errorf("cannot assign %v to %v", valType, targetType)
-    }
-    
-    rv.Elem().Set(reflect.ValueOf(val))
-    return nil
+
+	// FIX: Handle nil values - only valid for pointers and interfaces
+	if val == nil {
+		targetKind := rv.Elem().Kind()
+		if targetKind == reflect.Ptr || targetKind == reflect.Interface {
+			rv.Elem().Set(reflect.Zero(rv.Elem().Type()))
+			return nil
+		}
+		return fmt.Errorf("cannot assign null to non-pointer/interface type %v", rv.Elem().Type())
+	}
+
+	valType := reflect.ValueOf(val).Type()
+	targetType := rv.Elem().Type()
+
+	if !valType.AssignableTo(targetType) {
+		return fmt.Errorf("cannot assign %v to %v", valType, targetType)
+	}
+
+	rv.Elem().Set(reflect.ValueOf(val))
+	return nil
 }
 
 func value() (error, any) {
@@ -88,13 +88,14 @@ func member() (error, map[string]any) {
 	var st state
 	st = start
 	var currentKey string
-	for token, err := scanner.NextToken(); token.TypeOfToken != scanner.EOF; token, err = scanner.NextToken() {
+	for token, err := scanner.PeekToken(); token.TypeOfToken != scanner.EOF; token, err = scanner.PeekToken() {
 		if err != nil {
 			return err, nil
 		}
 
 		switch st {
 		case start:
+			scanner.NextToken() // consume the token
 			if token.TypeOfToken == scanner.END_OBJECT {
 				st = end
 				return nil, decodedObj
@@ -105,6 +106,7 @@ func member() (error, map[string]any) {
 				return fmt.Errorf(`Error:Expected string or "}" inside object`), nil
 			}
 		case parsedKey:
+			scanner.NextToken() // consume the token
 			if token.TypeOfToken == scanner.NAME_SEPARATOR {
 				err, val := value()
 				if err != nil {
@@ -116,6 +118,7 @@ func member() (error, map[string]any) {
 				return fmt.Errorf(`Error:Expected ":" after string `), nil
 			}
 		case parsedValue:
+			scanner.NextToken() // consume the token
 			if token.TypeOfToken == scanner.END_OBJECT {
 				st = end
 				return nil, decodedObj
@@ -125,6 +128,7 @@ func member() (error, map[string]any) {
 				return fmt.Errorf(`Error:Unexpected end of object`), nil
 			}
 		case parsedValSep:
+			scanner.NextToken() // consume the token
 			if token.TypeOfToken == scanner.STRING {
 				st = parsedKey
 				currentKey = token.StringVal
@@ -134,7 +138,7 @@ func member() (error, map[string]any) {
 		}
 
 	}
-	return nil, decodedObj
+	return fmt.Errorf(`Error:Missing closing brace for object`), nil
 }
 
 func array() (error, []any) {
@@ -156,7 +160,7 @@ func array() (error, []any) {
 
 		switch st {
 		case start:
-			
+
 			if token.TypeOfToken == scanner.END_ARRAY {
 				scanner.NextToken()
 				st = end
@@ -177,6 +181,8 @@ func array() (error, []any) {
 			} else if token.TypeOfToken == scanner.VALUE_SEPARATOR {
 				scanner.NextToken()
 				st = parsedValSep
+			} else {
+				return fmt.Errorf("Error: Expected ',' or end of array ") , nil
 			}
 		case parsedValSep:
 			err, val := value()
@@ -187,5 +193,5 @@ func array() (error, []any) {
 			st = parsedVal
 		}
 	}
-	return nil, decodedArr
+	return fmt.Errorf("Error:Missing closing bracket for array ") , nil
 }
