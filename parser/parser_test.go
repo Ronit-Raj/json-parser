@@ -187,7 +187,7 @@ func TestDecodeBoolAndNull(t *testing.T) {
 	// and calling .Type() on a zero Value causes a panic.
 	// The parser needs to be modified to handle the nil case specially before
 	// calling reflect.ValueOf().
-	/*
+	
 		// Test null separately as it requires interface{}
 		t.Run("Null", func(t *testing.T) {
 			resetScanner()
@@ -201,7 +201,7 @@ func TestDecodeBoolAndNull(t *testing.T) {
 				t.Errorf("Decode() = %v, want nil", result)
 			}
 		})
-	*/
+	
 }
 
 func TestDecodeArray(t *testing.T) {
@@ -215,14 +215,14 @@ func TestDecodeArray(t *testing.T) {
 		// has a bug where it calls value() for empty arrays, which returns "Unexpected token"
 		// when it encounters ']' immediately after '['. The parser needs to check for
 		// END_ARRAY first before calling value().
-		/*
-			{
-				name:     "Empty array",
-				input:    `[]`,
-				expected: []any{},
-				wantErr:  false,
-			},
-		*/
+		
+		{
+			name:     "Empty array",
+			input:    `[]`,
+			expected: []any{},
+			wantErr:  false,
+		},
+		
 		{
 			name:     "Array of numbers",
 			input:    `[1, 2, 3, 4, 5]`,
@@ -237,14 +237,14 @@ func TestDecodeArray(t *testing.T) {
 		},
 		// COMMENTED OUT: Contains null value which causes the same panic as above
 		// (reflect.ValueOf(nil) creates a zero Value).
-		/*
-			{
-				name:     "Mixed array",
-				input:    `[1, "test", true, null, false]`,
-				expected: []any{float64(1), "test", true, nil, false},
-				wantErr:  false,
-			},
-		*/
+		
+		{
+			name:     "Mixed array",
+			input:    `[1, "test", true, null, false]`,
+			expected: []any{float64(1), "test", true, nil, false},
+			wantErr:  false,
+		},
+		
 		{
 			name:     "Nested array",
 			input:    `[1, [2, 3], 4]`,
@@ -298,19 +298,19 @@ func TestDecodeObject(t *testing.T) {
 			wantErr: false,
 		},
 		// COMMENTED OUT: Contains null value which causes panic.
-		/*
-			{
-				name:  "Object with different types",
-				input: `{"string": "value", "number": 42, "bool": true, "null": null}`,
-				expected: map[string]any{
-					"string": "value",
-					"number": float64(42),
-					"bool":   true,
-					"null":   nil,
-				},
-				wantErr: false,
+		
+		{
+			name:  "Object with different types",
+			input: `{"string": "value", "number": 42, "bool": true, "null": null}`,
+			expected: map[string]any{
+				"string": "value",
+				"number": float64(42),
+				"bool":   true,
+				"null":   nil,
 			},
-		*/
+			wantErr: false,
+		},
+	
 		{
 			name:  "Nested object",
 			input: `{"person": {"name": "Alice", "age": 25}}`,
@@ -367,7 +367,7 @@ func TestDecodeComplexStructures(t *testing.T) {
 	}{
 		// COMMENTED OUT: Contains null value ("address": null) which causes panic.
 		// Same issue as above with reflect.ValueOf(nil).
-		/*
+		
 			{
 				name: "Complex nested structure",
 				input: `{
@@ -394,7 +394,7 @@ func TestDecodeComplexStructures(t *testing.T) {
 				},
 				wantErr: false,
 			},
-		*/
+		
 		// COMMENTED OUT: Tests fail with "cannot assign float64/string to map[string]interface {}"
 		// This suggests the parser is not maintaining state properly between nested value parses,
 		// possibly due to global scanner state not being managed correctly during recursive parsing.
@@ -555,40 +555,39 @@ func TestDecodeEmptyStructures(t *testing.T) {
 	})
 
 	// COMMENTED OUT: Empty array test fails due to parser bug (same as above).
-	/*
-		t.Run("Empty array", func(t *testing.T) {
-			resetScanner()
-			var result []any
-			err := Decode(`[]`, &result)
-			if err != nil {
-				t.Errorf("Decode() error = %v", err)
-				return
-			}
-			if len(result) != 0 {
-				t.Errorf("Expected empty array, got %v", result)
-			}
-		})
-	*/
+	
+	t.Run("Empty array", func(t *testing.T) {
+		resetScanner()
+		var result []any
+		err := Decode(`[]`, &result)
+		if err != nil {
+			t.Errorf("Decode() error = %v", err)
+			return
+		}
+		if len(result) != 0 {
+			t.Errorf("Expected empty array, got %v", result)
+		}
+	})
+	
 
-	// COMMENTED OUT: Contains empty array which fails.
-	/*
-		t.Run("Object with empty nested structures", func(t *testing.T) {
-			resetScanner()
-			var result map[string]any
-			err := Decode(`{"obj": {}, "arr": []}`, &result)
-			if err != nil {
-				t.Errorf("Decode() error = %v", err)
-				return
-			}
-			expected := map[string]any{
-				"obj": map[string]any{},
-				"arr": []any{},
-			}
-			if !reflect.DeepEqual(result, expected) {
-				t.Errorf("Decode() = %v, want %v", result, expected)
-			}
-		})
-	*/
+	
+	t.Run("Object with empty nested structures", func(t *testing.T) {
+		resetScanner()
+		var result map[string]any
+		err := Decode(`{"obj": {}, "arr": []}`, &result)
+		if err != nil {
+			t.Errorf("Decode() error = %v", err)
+			return
+		}
+		expected := map[string]any{
+			"obj": map[string]any{},
+			"arr": []any{},
+		}
+		if !reflect.DeepEqual(result, expected) {
+			t.Errorf("Decode() = %v, want %v", result, expected)
+		}
+	})
+	
 }
 
 // Benchmark tests
@@ -601,8 +600,7 @@ func BenchmarkDecodeSimpleObject(b *testing.B) {
 	}
 }
 
-// COMMENTED OUT: Contains null value which causes panic.
-/*
+
 func BenchmarkDecodeComplexObject(b *testing.B) {
 	json := `{
 		"class": 12,
@@ -619,7 +617,7 @@ func BenchmarkDecodeComplexObject(b *testing.B) {
 		_ = Decode(json, &result)
 	}
 }
-*/
+
 
 func BenchmarkDecodeArray(b *testing.B) {
 	json := `[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]`

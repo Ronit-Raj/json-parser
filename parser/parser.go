@@ -6,24 +6,39 @@ import (
 	"reflect"
 )
 
-func Decode(json string, decodeVal any) error {
-	rv := reflect.ValueOf(decodeVal)
-	if rv.Kind() != reflect.Ptr {
-		return fmt.Errorf("Decode expects a pointer")
-	}
-	scanner.Text = json
-	err, val := value()
-	if err != nil {
+func Decode(text string, v any) error {
+    scanner.Text = text
+    scanner.ResetPointer()
+    
+    rv := reflect.ValueOf(v)
+    if rv.Kind() != reflect.Ptr || rv.IsNil() {
+        return fmt.Errorf("non-nil pointer required")
+    }
+    
+    err,val := value()
+	if(err!=nil){
 		return err
 	}
-
-	dst := rv.Elem()
-	src := reflect.ValueOf(val)
-	if !src.Type().AssignableTo(dst.Type()) {
-		return fmt.Errorf("cannot assign %v to %v", src.Type(), dst.Type())
-	}
-	dst.Set(src)
-	return nil
+    
+    // FIX: Handle nil values - only valid for pointers and interfaces
+    if val == nil {
+        targetKind := rv.Elem().Kind()
+        if targetKind == reflect.Ptr || targetKind == reflect.Interface {
+            rv.Elem().Set(reflect.Zero(rv.Elem().Type()))
+            return nil
+        }
+        return fmt.Errorf("cannot assign null to non-pointer/interface type %v", rv.Elem().Type())
+    }
+    
+    valType := reflect.ValueOf(val).Type()
+    targetType := rv.Elem().Type()
+    
+    if !valType.AssignableTo(targetType) {
+        return fmt.Errorf("cannot assign %v to %v", valType, targetType)
+    }
+    
+    rv.Elem().Set(reflect.ValueOf(val))
+    return nil
 }
 
 func value() (error, any) {
@@ -141,12 +156,13 @@ func array() (error, []any) {
 
 		switch st {
 		case start:
-			err, val := value()
+			
 			if token.TypeOfToken == scanner.END_ARRAY {
 				scanner.NextToken()
 				st = end
-				return err, decodedArr
+				return nil, decodedArr
 			} else {
+				err, val := value()
 				if err != nil {
 					return err, nil
 				}
