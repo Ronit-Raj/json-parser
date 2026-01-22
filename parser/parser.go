@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"fmt"
-	"json_parser/scanner"
-	"reflect"
+    "fmt"
+    "github.com/Ronit-Raj/json-parser/scanner"
+    "reflect"
 )
 
 func Decode(text string, v any) error {

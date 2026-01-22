@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"json_parser/scanner"
+	"github.com/Ronit-Raj/json-parser/scanner"
 	"reflect"
 	"testing"
 )
