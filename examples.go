@@ -14,18 +14,30 @@ func main() {
 			   "empty-array":[]}`
 	// json := `{}}}`
 	var i map[string]any
-	if err:=parser.Decode(json,&i); err != nil {
+	if err := parser.Decode(json, &i); err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(i["array"].([]any))
-	fmt.Println(i["address"])
 	
+	marks, ok := i["marks"].(map[string]any)
+	if !ok {
+		fmt.Println("marks field is not a map")
+		return
+	}
+	
+	chemMarks, ok := marks["chem"]
+	if !ok {
+		fmt.Println("chem field not found")
+		return
+	}
+	
+	fmt.Println(chemMarks)
+
 	json = `["💀12",
 	23  ,
 	true]`
 	var j []any
-	if err:=parser.Decode(json,&j); err != nil {
+	if err := parser.Decode(json, &j); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -33,7 +45,7 @@ func main() {
 
 	json = `{"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]}`
 	var k map[string]any
-	if err:=parser.Decode(json,&k); err != nil {
+	if err := parser.Decode(json, &k); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -42,4 +54,3 @@ func main() {
 	fmt.Println(secondUser["name"])
 
 }
-			
