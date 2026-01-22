@@ -3,6 +3,20 @@
 This is a JSON parser written from scratch in Go . It aims to be fully compatible 
 with [RFC8259](https://datatracker.ietf.org/doc/html/rfc8259) . 
 
+## Installation
+
+To install this module in your Go project, run:
+
+```sh
+go get github.com/Ronit-Raj/json-parser
+```
+
+Or to get a specific version:
+
+```sh
+go get github.com/Ronit-Raj/json-parser@v1.0.0
+```
+
 ## Usage Examples
 
 ### Step 1: Import the Package
@@ -10,7 +24,7 @@ with [RFC8259](https://datatracker.ietf.org/doc/html/rfc8259) .
 ```go
 import (
     "fmt"
-    "json_parser/parser"
+    "github.com/Ronit-Raj/json-parser/parser"
 )
 ```
 
